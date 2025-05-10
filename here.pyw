@@ -1,67 +1,103 @@
 import tkinter as tk
+import json
+import os
 
-MAP = {
-    "A": "ghc", "B": "qzr", "C": "vnt", "D": "lxm", "E": "kto", "F": "dru",
-    "G": "wye", "H": "bsa", "I": "nem", "J": "uxp", "K": "miv", "L": "jrk",
-    "M": "tah", "N": "oec", "O": "spg", "P": "xdb", "Q": "zyl", "R": "fcu",
-    "S": "nid", "T": "akj", "U": "rbo", "V": "hqn", "W": "cme", "X": "ibe",
-    "Y": "ztu", "Z": "ylg"
+# Fixed mapping (must stay consistent)
+char_to_here = {
+    'a': 'ghc', 'b': 'qzr', 'c': 'vnt', 'd': 'lxm', 'e': 'kto', 'f': 'dru',
+    'g': 'wye', 'h': 'bsa', 'i': 'nem', 'j': 'uxp', 'k': 'miv', 'l': 'jrk',
+    'm': 'tah', 'n': 'oec', 'o': 'spg', 'p': 'xdb', 'q': 'zyl', 'r': 'fcu',
+    's': 'nid', 't': 'akj', 'u': 'rbo', 'v': 'hqn', 'w': 'cme', 'x': 'ibe',
+    'y': 'ztu', 'z': 'ylg', ' ': '5'
 }
-REVERSE = {v: k for k, v in MAP.items()}
 
-class HereGUI(tk.Tk):
-    def __init__(self):
-        super().__init__()
-        self.title("Here: Py Edition - BAYNEISCODER")
-        self.geometry("800x240")
-        self.configure(bg="#0d1117")
-        self.setup()
+here_to_char = {}
+for char, code in char_to_here.items():
+    here_to_char[code + '0'] = char.lower()
+    if char != ' ':
+        here_to_char[code + '1'] = char.upper()
 
-    def setup(self):
-        tk.Label(self, text="Input:", fg="#58a6ff", bg="#0d1117").grid(row=0, column=0, sticky="w", padx=10, pady=5)
-        self.input = tk.Entry(self, width=80, bg="#161b22", fg="#c9d1d9", insertbackground="#c9d1d9")
-        self.input.grid(row=0, column=1, padx=10, pady=5)
+json_file = 'here_dictionary.json'
 
-        self.mode = tk.StringVar(value="eng_to_here")
-        tk.Radiobutton(self, text="English to Here", variable=self.mode, value="eng_to_here", bg="#0d1117", fg="#c9d1d9").grid(row=1, column=0, padx=10, sticky="w")
-        tk.Radiobutton(self, text="Here to English", variable=self.mode, value="here_to_eng", bg="#0d1117", fg="#c9d1d9").grid(row=1, column=1, padx=10, sticky="w")
+def save_json():
+    with open(json_file, 'w') as f:
+        json.dump(char_to_here, f)
 
-        tk.Button(self, text="Translate", command=self.translate, bg="#238636", fg="#ffffff").grid(row=2, column=0, columnspan=2, pady=10)
+def check_json_validity():
+    if not os.path.exists(json_file):
+        print("JSON file not found, generating...")
+        save_json()
+    else:
+        try:
+            with open(json_file, 'r') as f:
+                data = json.load(f)
+            for k, v in data.items():
+                if len(k) != 1 or not k.isalpha() and k != ' ' or len(v) != 3:
+                    print(f"Invalid entry in dictionary: {k}: {v}")
+        except Exception as e:
+            print("JSON Error:", e)
 
-        self.output = tk.Text(self, height=4, bg="#161b22", fg="#c9d1d9", wrap="word")
-        self.output.grid(row=3, column=0, columnspan=2, padx=10, sticky="we")
+check_json_validity()
 
-        tk.Button(self, text="Copy", command=self.copy_to_clipboard, bg="#238636", fg="#ffffff").grid(row=4, column=0, columnspan=2, pady=5)
+def translate_to_here(text):
+    result = ''
+    for char in text:
+        if char.lower() in char_to_here:
+            base = char_to_here[char.lower()]
+            result += base + ('1' if char.isupper() else '0')
+        elif char == ' ':
+            result += '5'
+    return result
 
-    def translate(self):
-        text = self.input.get().strip()
-        result = ""
-        if self.mode.get() == "eng_to_here":
-            for ch in text:
-                if ch.isalpha():
-                    upper = ch.upper()
-                    code = MAP[upper]
-                    result += code + ("1" if ch.isupper() else "0")
-        else:
-            if len(text) % 4 != 0:
-                result = "Invalid input length (must be multiple of 4)."
+def translate_to_english(text):
+    i = 0
+    result = ''
+    while i < len(text):
+        if text[i] == '5':
+            result += ' '
+            i += 1
+        elif i + 4 <= len(text):
+            block = text[i:i+4]
+            if block in here_to_char:
+                result += here_to_char[block]
+                i += 4
             else:
-                try:
-                    for i in range(0, len(text), 4):
-                        code = text[i:i+3]
-                        flag = text[i+3]
-                        letter = REVERSE.get(code, "?")
-                        result += letter if flag == "1" else letter.lower()
-                except Exception:
-                    result = "Error during translation."
-        self.output.delete("1.0", tk.END)
-        self.output.insert(tk.END, result)
+                result += '?'
+                i += 4
+        else:
+            result += '?'
+            break
+    return result
 
-    def copy_to_clipboard(self):
-        result = self.output.get("1.0", tk.END).strip()
-        self.clipboard_clear()
-        self.clipboard_append(result)
+def run_translation():
+    if mode.get() == "eng_to_here":
+        output.delete("1.0", tk.END)
+        output.insert(tk.END, translate_to_here(input_text.get("1.0", tk.END).strip()))
+    else:
+        output.delete("1.0", tk.END)
+        output.insert(tk.END, translate_to_english(input_text.get("1.0", tk.END).strip()))
 
-if __name__ == "__main__":
-    app = HereGUI()
-    app.mainloop()
+# GUI
+root = tk.Tk()
+root.title("Here: Py Edition")
+root.geometry("700x250")
+
+mode = tk.StringVar(value="eng_to_here")
+
+tk.Label(root, text="Here Translator").pack()
+
+frame = tk.Frame(root)
+frame.pack()
+
+tk.Radiobutton(frame, text="English to Here", variable=mode, value="eng_to_here").grid(row=0, column=0, padx=10)
+tk.Radiobutton(frame, text="Here to English", variable=mode, value="here_to_eng").grid(row=0, column=1, padx=10)
+
+input_text = tk.Text(root, height=5, width=80)
+input_text.pack(pady=5)
+
+tk.Button(root, text="Translate", command=run_translation).pack()
+
+output = tk.Text(root, height=5, width=80)
+output.pack(pady=5)
+
+root.mainloop()
