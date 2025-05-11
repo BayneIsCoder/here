@@ -8,7 +8,7 @@ char_to_here = {
     'g': 'wye', 'h': 'bsa', 'i': 'nem', 'j': 'uxp', 'k': 'miv', 'l': 'jrk',
     'm': 'tah', 'n': 'oec', 'o': 'spg', 'p': 'xdb', 'q': 'zyl', 'r': 'fcu',
     's': 'nid', 't': 'akj', 'u': 'rbo', 'v': 'hqn', 'w': 'cme', 'x': 'ibe',
-    'y': 'ztu', 'z': 'ylg', ' ': '5'
+    'y': 'ztu', 'z': 'ylg', ' ': ' '
 }
 
 here_to_char = {}
